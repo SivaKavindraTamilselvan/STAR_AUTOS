@@ -123,6 +123,29 @@ app.post(
     }
 );
 
+app.post('/upload', upload.single('file'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Construct the file path URL for accessing the uploaded file
+        const filePath = `https://star-autos.onrender.com/uploads/${req.file.filename}`;
+
+        res.status(200).json({
+            message: 'File uploaded successfully',
+            file: {
+                name: req.file.filename,
+                type: req.file.mimetype,
+                size: req.file.size,
+                path: filePath,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/vehicledata', async (req, res) => {
     try {
         const vehicleData = await Vehicle.find(); // Fetch all vehicle data
@@ -175,7 +198,7 @@ app.get('/api/server/getLatestAc', async (req, res) => {
 
 app.get('/api/server/search-vehicle', async (req, res) => {
     try {
-        const { hp, registernumber } = req.query; 
+        const { hp, registernumber } = req.query;
 
         const query = {};
 
@@ -183,7 +206,7 @@ app.get('/api/server/search-vehicle', async (req, res) => {
             query.acNumber = hp;
         }
         if (registernumber) {
-            query.registernumber = registernumber; 
+            query.registernumber = registernumber;
         }
 
         const vehicle = await Vehicle.find(query);
@@ -235,7 +258,7 @@ app.put(
             }
 
             const updatedVehicle = await Vehicle.findOneAndUpdate(
-                { acNumber:hp },
+                { acNumber: hp },
                 updatedData,
                 { new: true }
             );
