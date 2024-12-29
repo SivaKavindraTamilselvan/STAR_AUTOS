@@ -12,6 +12,10 @@ app.use(cors());
 app.use('/uploads', express.static('uploads'));
 app.use(express.urlencoded({ extended: true }));
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
 
 const mongoURI = 'mongodb+srv://sivakavindra:tamilselvan0701@star.kxfox.mongodb.net/?retryWrites=true&w=majority&appName=star';
 mongoose
