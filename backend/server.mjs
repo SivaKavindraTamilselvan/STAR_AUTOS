@@ -10,6 +10,8 @@ const port = 8081;
 app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
+app.use(express.urlencoded({ extended: true }));
+
 
 const mongoURI = 'mongodb+srv://sivakavindra:tamilselvan0701@star.kxfox.mongodb.net/?retryWrites=true&w=majority&appName=star';
 mongoose
@@ -77,13 +79,29 @@ const Vehicle = mongoose.model('Vehicle', VehicleSchema);
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        const uploadDir = path.join(__dirname, 'uploads');
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
     },
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Unsupported file type'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 app.post(
     '/api/server/addvehicle',
@@ -93,38 +111,38 @@ app.post(
         { name: 'vehiclephoto', maxCount: 1 },
         { name: 'noc', maxCount: 1 },
         { name: 'insurancecopy', maxCount: 1 },
-
     ]),
     async (req, res) => {
         try {
-            const vehicleData = req.body;
+            console.log('Request Body:', req.body);
+            console.log('Uploaded Files:', req.files);
 
-            if (req.files['rcbookfile']) {
-                vehicleData.rcbookfile = req.files['rcbookfile'][0].path;
-            }
-            if (req.files['aadharbook']) {
-                vehicleData.aadharbook = req.files['aadharbook'][0].path;
-            }
-            if (req.files['vehiclephoto']) {
-                vehicleData.vehiclephoto = req.files['vehiclephoto'][0].path;
-            }
-            if (req.files['noc']) {
-                vehicleData.noc = req.files['noc'][0].path;
-            }
-            if (req.files['insurancecopy']) {
-                vehicleData.insurancecopy = req.files['insurancecopy'][0].path;
+            if (!req.files || Object.keys(req.files).length === 0) {
+                return res.status(400).json({ message: 'No files were uploaded' });
             }
 
-            const newVehicle = new Vehicle(vehicleData);
-            await newVehicle.save();
+            const uploadedFiles = {};
+            for (const field in req.files) {
+                uploadedFiles[field] = req.files[field][0].path;
+            }
 
-            res.status(200).json({ message: 'Vehicle added successfully!', vehicle: newVehicle });
+            console.log('Files processed:', uploadedFiles);
+
+            res.status(200).json({
+                message: 'Vehicle details and files uploaded successfully',
+                data: uploadedFiles,
+            });
         } catch (error) {
-            console.error('Error adding vehicle:', error);
-            res.status(500).json({ message: 'Failed to add vehicle', error: error.message });
+            console.error('Error processing request:', error.message);
+            res.status(500).json({
+                message: 'Failed to upload vehicle details',
+                error: error.message,
+            });
         }
     }
 );
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/vehicledata', async (req, res) => {
     try {
