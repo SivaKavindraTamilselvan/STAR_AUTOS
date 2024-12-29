@@ -48,6 +48,7 @@ const VehicleSchema = new mongoose.Schema({
     costprice:{type:String},
     spent:{type:String},
     sellingprice:{type:String},
+    totalamount:{type:String},
     rcbookfile: { type: String },
     aadharbook: { type: String },
     vehiclephoto: { type: String },
