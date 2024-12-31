@@ -50,6 +50,8 @@ const VehicleSchema = new mongoose.Schema({
     sellingprice:{type:String},
     totalamount:{type:String},
     status:{type:String},
+    date:{type:String},
+    sellingdate:{type:String},
     rcbookfile: { type: String },
     aadharbook: { type: String },
     vehiclephoto: { type: String },
@@ -134,7 +136,9 @@ app.post(
 app.get('/api/fetchvehicle/bill/:billNumber', async (req, res) => {
     try {
         const { billNumber } = req.params;
+        console.log(billNumber);
         const vehicle = await Vehicle.findOne({ acNumber: billNumber }); // Querying using `acNumber`
+        console.log(vehicle);
         
         if (!vehicle) {
             return res.status(404).json({ message: 'Vehicle not found' });
@@ -150,11 +154,13 @@ app.get('/api/fetchvehicle/bill/:billNumber', async (req, res) => {
 app.patch('/api/vehicle/:billNumber/mark-sold', async (req, res) => {
     try {
         const { billNumber } = req.params;
+        const currentDate = new Date();
+
 
         // Find the vehicle by acNumber (if applicable)
         const updatedVehicle = await Vehicle.findOneAndUpdate(
             { acNumber: billNumber }, // Match the vehicle using acNumber
-            { status: "sold" }, // Update status to "sold"
+            { status: "sold" , sellingdate:currentDate}, // Update status to "sold"
             { new: true } // Return the updated document
         );
 
