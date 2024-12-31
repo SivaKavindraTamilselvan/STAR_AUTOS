@@ -49,6 +49,7 @@ const VehicleSchema = new mongoose.Schema({
     spent:{type:String},
     sellingprice:{type:String},
     totalamount:{type:String},
+    status:{type:String},
     rcbookfile: { type: String },
     aadharbook: { type: String },
     vehiclephoto: { type: String },
@@ -98,7 +99,10 @@ app.post(
     ]),
     async (req, res) => {
         try {
-            const vehicleData = req.body;
+            const vehicleData = {
+                ...req.body, // Spread the body fields into the `vehicleData` object
+                status: 'not sold', // Set the default status
+            };
 
             if (req.files['rcbookfile']) {
                 vehicleData.rcbookfile = req.files['rcbookfile'][0].path;
@@ -126,6 +130,45 @@ app.post(
         }
     }
 );
+
+app.get('/api/fetchvehicle/bill/:billNumber', async (req, res) => {
+    try {
+        const { billNumber } = req.params;
+        const vehicle = await Vehicle.findOne({ acNumber: billNumber }); // Querying using `acNumber`
+        
+        if (!vehicle) {
+            return res.status(404).json({ message: 'Vehicle not found' });
+        }
+        
+        res.status(200).json(vehicle);
+    } catch (error) {
+        console.error('Error fetching vehicle details:', error);
+        res.status(500).json({ message: 'Failed to fetch vehicle details' });
+    }
+});
+
+app.patch('/api/vehicle/:billNumber/mark-sold', async (req, res) => {
+    try {
+        const { billNumber } = req.params;
+
+        // Find the vehicle by acNumber (if applicable)
+        const updatedVehicle = await Vehicle.findOneAndUpdate(
+            { acNumber: billNumber }, // Match the vehicle using acNumber
+            { status: "sold" }, // Update status to "sold"
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedVehicle) {
+            return res.status(404).json({ message: "Vehicle not found" });
+        }
+
+        res.status(200).json({ message: "Vehicle status updated to sold", vehicle: updatedVehicle });
+    } catch (error) {
+        console.error("Error updating vehicle status:", error);
+        res.status(500).json({ message: "Failed to update vehicle status" });
+    }
+});
+
 
 app.get('/api/vehicledata', async (req, res) => {
     try {
