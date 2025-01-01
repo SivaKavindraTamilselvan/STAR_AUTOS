@@ -45,13 +45,18 @@ const VehicleSchema = new mongoose.Schema({
     rcownername: { type: String },
     dealername: { type: String },
     dealerphone: { type: String },
-    costprice:{type:String},
-    spent:{type:String},
-    sellingprice:{type:String},
-    totalamount:{type:String},
-    status:{type:String},
-    date:{type:String},
-    sellingdate:{type:String},
+    costprice: { type: String },
+    spent: { type: String },
+    sellingprice: { type: String },
+    totalamount: { type: String },
+    status: { type: String },
+    date: { type: String },
+    sellingdate: { type: String },
+    customerName: { type: String },
+    customerAddress: { type: String },
+    mobileno: { type: String },
+    kilometer: { type: String },
+    soldprice: { type: String },
     rcbookfile: { type: String },
     aadharbook: { type: String },
     vehiclephoto: { type: String },
@@ -139,11 +144,11 @@ app.get('/api/fetchvehicle/bill/:billNumber', async (req, res) => {
         console.log(billNumber);
         const vehicle = await Vehicle.findOne({ acNumber: billNumber }); // Querying using `acNumber`
         console.log(vehicle);
-        
+
         if (!vehicle) {
             return res.status(404).json({ message: 'Vehicle not found' });
         }
-        
+
         res.status(200).json(vehicle);
     } catch (error) {
         console.error('Error fetching vehicle details:', error);
@@ -160,7 +165,7 @@ app.patch('/api/vehicle/:billNumber/mark-sold', async (req, res) => {
         // Find the vehicle by acNumber (if applicable)
         const updatedVehicle = await Vehicle.findOneAndUpdate(
             { acNumber: billNumber }, // Match the vehicle using acNumber
-            { status: "sold" , sellingdate:currentDate}, // Update status to "sold"
+            { status: "sold", sellingdate: currentDate }, // Update status to "sold"
             { new: true } // Return the updated document
         );
 
@@ -172,6 +177,30 @@ app.patch('/api/vehicle/:billNumber/mark-sold', async (req, res) => {
     } catch (error) {
         console.error("Error updating vehicle status:", error);
         res.status(500).json({ message: "Failed to update vehicle status" });
+    }
+});
+
+
+app.put('/api/customer/update/:billNumber', async (req, res) => {
+    try {
+        const { billNumber } = req.params;
+        const { customerName, customerAddress, mobileno ,kilometer,totaamountstring} = req.body;
+        console.log(totaamountstring);
+        // Update the customer details in your database
+        const updatedCustomer = await Vehicle.findOneAndUpdate(
+            { acNumber: billNumber },
+            { customerName, customerAddress, mobileno, kilometer, soldprice:totaamountstring },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedCustomer) {
+            return res.status(404).json({ message: "Customer not found." });
+        }
+
+        res.status(200).json({ message: "Customer details updated successfully.", data: updatedCustomer });
+    } catch (error) {
+        console.error("Error updating customer details:", error);
+        res.status(500).json({ message: "An error occurred while updating customer details." });
     }
 });
 
@@ -228,7 +257,7 @@ app.get('/api/server/getLatestAc', async (req, res) => {
 
 app.get('/api/server/search-vehicle', async (req, res) => {
     try {
-        const { hp, registernumber } = req.query; 
+        const { hp, registernumber } = req.query;
 
         const query = {};
 
@@ -236,7 +265,7 @@ app.get('/api/server/search-vehicle', async (req, res) => {
             query.acNumber = hp;
         }
         if (registernumber) {
-            query.registernumber = registernumber; 
+            query.registernumber = registernumber;
         }
 
         const vehicle = await Vehicle.find(query);
@@ -288,7 +317,7 @@ app.put(
             }
 
             const updatedVehicle = await Vehicle.findOneAndUpdate(
-                { acNumber:hp },
+                { acNumber: hp },
                 updatedData,
                 { new: true }
             );
